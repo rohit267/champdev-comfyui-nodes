@@ -21,7 +21,7 @@ Clone into your ComfyUI custom nodes directory:
 
 ```bash
 cd /path/to/ComfyUI/custom_nodes
-git clone https://github.com/<your-username>/chamdev-nodes.git
+git clone https://github.com/rohit267/chamdev-nodes.git
 ```
 
 Restart ComfyUI.
