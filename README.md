@@ -15,6 +15,19 @@ Inputs:
 - `fixed_filename_no_increment` (`BOOLEAN`): save using a fixed filename (no default counter suffix).
 - `auto_delete_after_seconds` (`INT`): delete saved file after N seconds (`0` disables).
 
+### Champdev Save video
+Save-video output node that follows core Save Video behavior (takes a `VIDEO` input and saves via Comfy's video pipeline), with extra file-handling options.
+
+Inputs:
+- `video` (`VIDEO`)
+- `filename_prefix` (`STRING`)
+- `format` (`auto` + core-supported containers)
+- `codec` (`auto` + core-supported codecs)
+- `save_to_comfy_temp_dir` (`BOOLEAN`)
+- `overwrite_existing` (`BOOLEAN`)
+- `fixed_filename_no_increment` (`BOOLEAN`)
+- `auto_delete_after_seconds` (`INT`)
+
 ## Installation
 
 Clone into your ComfyUI custom nodes directory:
