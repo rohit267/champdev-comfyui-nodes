@@ -199,3 +199,21 @@ def test_move_paths_dest_must_be_dir(tmp_path):
     src.write_text("x")
     with pytest.raises(NotADirectoryError):
         fm_core.move_paths([str(src)], str(tmp_path / "nope"))
+
+
+def test_save_upload_bytes_writes_file(tmp_path):
+    res = fm_core.save_upload_bytes(str(tmp_path), "up.bin", b"hello")
+    assert res["ok"] is True
+    assert (tmp_path / "up.bin").read_bytes() == b"hello"
+
+
+def test_save_upload_bytes_strips_path_components(tmp_path):
+    res = fm_core.save_upload_bytes(str(tmp_path), "../escape.txt", b"x")
+    # filename is reduced to its basename; nothing escapes the dest
+    assert os.path.dirname(res["path"]) == os.path.realpath(str(tmp_path))
+    assert os.path.basename(res["path"]) == "escape.txt"
+
+
+def test_save_upload_bytes_dest_must_be_dir(tmp_path):
+    with pytest.raises(NotADirectoryError):
+        fm_core.save_upload_bytes(str(tmp_path / "nope"), "a.txt", b"x")

@@ -145,6 +145,19 @@ def move_paths(paths, dest, copy=False):
     return results
 
 
+def save_upload_bytes(dest, filename, data):
+    real_dest = safe_realpath(dest)
+    if not os.path.isdir(real_dest):
+        raise NotADirectoryError(real_dest)
+    safe_name = os.path.basename(filename or "")
+    if not safe_name:
+        raise ValueError("invalid filename")
+    target = os.path.join(real_dest, safe_name)
+    with open(target, "wb") as f:
+        f.write(data)
+    return {"ok": True, "path": target}
+
+
 def get_properties(path):
     real = safe_realpath(path)
     if not os.path.exists(real):
