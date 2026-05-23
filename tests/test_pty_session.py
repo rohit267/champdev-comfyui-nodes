@@ -60,3 +60,16 @@ def test_terminate_stops_session():
     while s.is_alive() and time.time() < deadline:
         time.sleep(0.05)
     assert s.is_alive() is False
+
+
+def test_resize_applies_to_pty():
+    s = pty_session.PtySession()
+    s.spawn(shell="/bin/sh", cols=80, rows=24)
+    try:
+        s.resize(120, 40)
+        s.write(b"stty size\n")
+        out = _drain(s, b"40 120")
+        # `stty size` prints "<rows> <cols>"
+        assert b"40 120" in out
+    finally:
+        s.terminate()
