@@ -64,3 +64,28 @@ def test_list_dir_errors_on_missing_and_nondir(tmp_path):
     f.write_text("x")
     with pytest.raises(NotADirectoryError):
         fm_core.list_dir(str(f))
+
+
+def test_get_properties_of_file(tmp_path):
+    f = tmp_path / "note.txt"
+    f.write_text("hello")
+    props = fm_core.get_properties(str(f))
+    assert props["name"] == "note.txt"
+    assert props["kind"] == "text"
+    assert props["size"] == 5
+    assert props["is_dir"] is False
+
+
+def test_get_properties_includes_image_dimensions(tmp_path):
+    from PIL import Image
+    img = tmp_path / "pic.png"
+    Image.new("RGB", (12, 7)).save(str(img))
+    props = fm_core.get_properties(str(img))
+    assert props["kind"] == "image"
+    assert props["width"] == 12
+    assert props["height"] == 7
+
+
+def test_get_properties_missing_raises(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        fm_core.get_properties(str(tmp_path / "nope.txt"))

@@ -1,5 +1,10 @@
 import os
 
+try:
+    from PIL import Image
+except Exception:  # pragma: no cover
+    Image = None
+
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tiff", ".tif"}
 VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".avi", ".m4v"}
 AUDIO_EXTS = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac"}
@@ -74,3 +79,17 @@ def list_dir(path, show_hidden=False, sort="name"):
         "parent": None if parent == real else parent,
         "entries": entries,
     }
+
+
+def get_properties(path):
+    real = safe_realpath(path)
+    if not os.path.exists(real):
+        raise FileNotFoundError(real)
+    info = _entry(real)
+    if info["kind"] == "image" and Image is not None:
+        try:
+            with Image.open(real) as im:
+                info["width"], info["height"] = im.size
+        except Exception:
+            pass
+    return info
