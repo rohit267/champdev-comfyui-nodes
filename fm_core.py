@@ -179,7 +179,7 @@ def save_upload_bytes(dest, filename, data):
     target = _next_available_path(target)
     with open(target, "wb") as f:
         f.write(data)
-    return {"ok": True, "path": target}
+    return {"ok": True, "name": os.path.basename(target), "path": target}
 
 
 def make_thumbnail(path, cache_dir, size=256):
