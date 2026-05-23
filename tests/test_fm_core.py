@@ -109,3 +109,28 @@ def test_delete_paths_reports_errors(tmp_path):
     results = fm_core.delete_paths([str(tmp_path / "missing")])
     assert results[0]["ok"] is False
     assert "error" in results[0]
+
+
+def test_rename_path_renames_in_place(tmp_path):
+    f = tmp_path / "old.txt"
+    f.write_text("x")
+    res = fm_core.rename_path(str(f), "new.txt")
+    assert res["ok"] is True
+    assert os.path.basename(res["path"]) == "new.txt"
+    assert (tmp_path / "new.txt").exists()
+    assert not f.exists()
+
+
+def test_rename_path_rejects_separators(tmp_path):
+    f = tmp_path / "old.txt"
+    f.write_text("x")
+    with pytest.raises(ValueError):
+        fm_core.rename_path(str(f), "sub/new.txt")
+
+
+def test_rename_path_rejects_existing_target(tmp_path):
+    a = tmp_path / "a.txt"
+    a.write_text("x")
+    (tmp_path / "b.txt").write_text("y")
+    with pytest.raises(FileExistsError):
+        fm_core.rename_path(str(a), "b.txt")

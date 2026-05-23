@@ -82,6 +82,21 @@ def list_dir(path, show_hidden=False, sort="name"):
     }
 
 
+def _reject_separators(name, label):
+    if not name or os.path.sep in name or (os.path.altsep and os.path.altsep in name):
+        raise ValueError(f"{label} must be a bare name")
+
+
+def rename_path(path, new_name):
+    real = safe_realpath(path)
+    _reject_separators(new_name, "new_name")
+    target = os.path.join(os.path.dirname(real), new_name)
+    if os.path.exists(target):
+        raise FileExistsError(target)
+    os.rename(real, target)
+    return {"ok": True, "path": target}
+
+
 def delete_paths(paths):
     results = []
     for p in paths:
