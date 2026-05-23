@@ -217,3 +217,27 @@ def test_save_upload_bytes_strips_path_components(tmp_path):
 def test_save_upload_bytes_dest_must_be_dir(tmp_path):
     with pytest.raises(NotADirectoryError):
         fm_core.save_upload_bytes(str(tmp_path / "nope"), "a.txt", b"x")
+
+
+def test_make_thumbnail_creates_cached_jpeg(tmp_path):
+    from PIL import Image
+    src = tmp_path / "big.png"
+    Image.new("RGB", (1000, 500), "red").save(str(src))
+    cache = tmp_path / "cache"
+
+    out = fm_core.make_thumbnail(str(src), str(cache), size=128)
+
+    assert os.path.isfile(out)
+    with Image.open(out) as im:
+        assert max(im.size) <= 128
+
+    # second call returns the same cached path without error
+    out2 = fm_core.make_thumbnail(str(src), str(cache), size=128)
+    assert out2 == out
+
+
+def test_make_thumbnail_rejects_non_image(tmp_path):
+    f = tmp_path / "f.txt"
+    f.write_text("x")
+    with pytest.raises(ValueError):
+        fm_core.make_thumbnail(str(f), str(tmp_path / "cache"))

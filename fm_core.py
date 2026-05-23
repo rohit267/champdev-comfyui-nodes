@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 
@@ -156,6 +157,25 @@ def save_upload_bytes(dest, filename, data):
     with open(target, "wb") as f:
         f.write(data)
     return {"ok": True, "path": target}
+
+
+def make_thumbnail(path, cache_dir, size=256):
+    if Image is None:
+        raise RuntimeError("PIL not available")
+    real = safe_realpath(path)
+    if classify_kind(real) != "image":
+        raise ValueError("not an image")
+    st = os.stat(real)
+    key = hashlib.sha1(f"{real}:{st.st_mtime}:{size}".encode()).hexdigest()
+    os.makedirs(cache_dir, exist_ok=True)
+    out = os.path.join(cache_dir, key + ".jpg")
+    if os.path.exists(out):
+        return out
+    with Image.open(real) as im:
+        im = im.convert("RGB")
+        im.thumbnail((size, size))
+        im.save(out, "JPEG", quality=85)
+    return out
 
 
 def get_properties(path):
