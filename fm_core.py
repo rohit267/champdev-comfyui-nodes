@@ -97,6 +97,14 @@ def rename_path(path, new_name):
     return {"ok": True, "path": target}
 
 
+def make_dir(parent, name):
+    real_parent = safe_realpath(parent)
+    _reject_separators(name, "name")
+    target = os.path.join(real_parent, name)
+    os.makedirs(target, exist_ok=False)
+    return {"ok": True, "path": target}
+
+
 def delete_paths(paths):
     results = []
     for p in paths:

@@ -134,3 +134,21 @@ def test_rename_path_rejects_existing_target(tmp_path):
     (tmp_path / "b.txt").write_text("y")
     with pytest.raises(FileExistsError):
         fm_core.rename_path(str(a), "b.txt")
+
+
+def test_make_dir_creates_folder(tmp_path):
+    res = fm_core.make_dir(str(tmp_path), "newfolder")
+    assert res["ok"] is True
+    assert os.path.isdir(res["path"])
+    assert os.path.basename(res["path"]) == "newfolder"
+
+
+def test_make_dir_rejects_separators(tmp_path):
+    with pytest.raises(ValueError):
+        fm_core.make_dir(str(tmp_path), "a/b")
+
+
+def test_make_dir_rejects_existing(tmp_path):
+    (tmp_path / "dup").mkdir()
+    with pytest.raises(OSError):
+        fm_core.make_dir(str(tmp_path), "dup")
