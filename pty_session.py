@@ -1,6 +1,14 @@
 import os
+import signal
 
 IS_WINDOWS = os.name == "nt"
+
+if not IS_WINDOWS:
+    import fcntl
+    import pty
+    import select
+    import struct
+    import termios
 
 
 def default_shell():
@@ -13,3 +21,146 @@ def default_shell():
         if os.path.exists(candidate):
             return candidate
     return "/bin/sh"
+
+
+def _set_winsize_unix(fd, cols, rows):
+    winsize = struct.pack("HHHH", rows, cols, 0, 0)
+    fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
+
+
+class _UnixPty:
+    def __init__(self):
+        self.pid = None
+        self.fd = None
+        self._exit_code = None
+
+    def spawn(self, shell, cwd, env, cols, rows):
+        argv = [shell]
+        pid, fd = pty.fork()
+        if pid == 0:
+            # Child process: become the shell.
+            try:
+                if cwd:
+                    os.chdir(cwd)
+                os.execvpe(argv[0], argv, env or os.environ.copy())
+            except Exception:
+                os._exit(127)
+        # Parent.
+        self.pid = pid
+        self.fd = fd
+        _set_winsize_unix(fd, cols, rows)
+
+    def read(self, max_bytes, timeout):
+        if self.fd is None:
+            return b""
+        try:
+            ready, _, _ = select.select([self.fd], [], [], timeout)
+        except (OSError, ValueError):
+            return b""
+        if not ready:
+            return b""
+        try:
+            return os.read(self.fd, max_bytes)
+        except OSError:
+            return b""  # slave closed (EOF/EIO)
+
+    def write(self, data):
+        if self.fd is not None:
+            try:
+                os.write(self.fd, data)
+            except OSError:
+                pass
+
+    def resize(self, cols, rows):
+        if self.fd is not None:
+            try:
+                _set_winsize_unix(self.fd, cols, rows)
+            except OSError:
+                pass
+
+    def is_alive(self):
+        if self.pid is None:
+            return False
+        try:
+            wpid, status = os.waitpid(self.pid, os.WNOHANG)
+        except OSError:
+            return False
+        if wpid == 0:
+            return True
+        if os.WIFEXITED(status):
+            self._exit_code = os.WEXITSTATUS(status)
+        elif os.WIFSIGNALED(status):
+            self._exit_code = -os.WTERMSIG(status)
+        return False
+
+    def terminate(self):
+        if self.pid is not None:
+            try:
+                os.killpg(self.pid, signal.SIGKILL)
+            except OSError:
+                try:
+                    os.kill(self.pid, signal.SIGKILL)
+                except OSError:
+                    pass
+        if self.fd is not None:
+            try:
+                os.close(self.fd)
+            except OSError:
+                pass
+            self.fd = None
+
+    def exit_code(self):
+        return self._exit_code
+
+
+class _WinPty:
+    """Windows ConPTY implementation (filled in Task 4)."""
+
+    def spawn(self, shell, cwd, env, cols, rows):
+        raise RuntimeError("Windows PTY support not implemented yet")
+
+    def read(self, max_bytes, timeout):
+        return b""
+
+    def write(self, data):
+        pass
+
+    def resize(self, cols, rows):
+        pass
+
+    def is_alive(self):
+        return False
+
+    def terminate(self):
+        pass
+
+    def exit_code(self):
+        return None
+
+
+class PtySession:
+    """Cross-platform pseudo-terminal session facade."""
+
+    def __init__(self):
+        self._impl = _WinPty() if IS_WINDOWS else _UnixPty()
+
+    def spawn(self, shell=None, cwd=None, env=None, cols=80, rows=24):
+        self._impl.spawn(shell or default_shell(), cwd, env, int(cols), int(rows))
+
+    def read(self, max_bytes=65536, timeout=None):
+        return self._impl.read(max_bytes, timeout)
+
+    def write(self, data):
+        self._impl.write(data)
+
+    def resize(self, cols, rows):
+        self._impl.resize(int(cols), int(rows))
+
+    def is_alive(self):
+        return self._impl.is_alive()
+
+    def terminate(self):
+        self._impl.terminate()
+
+    def exit_code(self):
+        return self._impl.exit_code()

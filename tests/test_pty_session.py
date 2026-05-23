@@ -20,3 +20,43 @@ def test_default_shell_on_windows(monkeypatch):
     monkeypatch.setattr(pty_session.os, "name", "nt")
     monkeypatch.setenv("COMSPEC", r"C:\Windows\System32\cmd.exe")
     assert pty_session.default_shell() == r"C:\Windows\System32\cmd.exe"
+
+
+import time
+
+
+def _drain(session, needle, timeout=8.0):
+    """Read until `needle` (bytes) appears, the session dies, or timeout."""
+    deadline = time.time() + timeout
+    buf = b""
+    while time.time() < deadline:
+        chunk = session.read(4096, timeout=0.5)
+        if chunk:
+            buf += chunk
+            if needle in buf:
+                return buf
+        elif not session.is_alive():
+            break
+    return buf
+
+
+def test_unix_pty_runs_command():
+    s = pty_session.PtySession()
+    s.spawn(shell="/bin/sh", cols=80, rows=24)
+    try:
+        s.write(b"echo hello_pty_123\n")
+        out = _drain(s, b"hello_pty_123")
+        assert b"hello_pty_123" in out
+    finally:
+        s.terminate()
+
+
+def test_terminate_stops_session():
+    s = pty_session.PtySession()
+    s.spawn(shell="/bin/sh")
+    assert s.is_alive() is True
+    s.terminate()
+    deadline = time.time() + 5
+    while s.is_alive() and time.time() < deadline:
+        time.sleep(0.05)
+    assert s.is_alive() is False
