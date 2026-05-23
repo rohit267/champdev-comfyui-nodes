@@ -6,6 +6,12 @@ AUDIO_EXTS = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac"}
 TEXT_EXTS = {".txt", ".json", ".yaml", ".yml", ".md", ".csv", ".log", ".py", ".js"}
 
 
+def safe_realpath(path):
+    if not path:
+        raise ValueError("path is required")
+    return os.path.realpath(os.path.expanduser(path))
+
+
 def classify_kind(name):
     ext = os.path.splitext(name)[1].lower()
     if ext in IMAGE_EXTS:
