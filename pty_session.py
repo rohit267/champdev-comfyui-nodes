@@ -117,6 +117,7 @@ class _UnixPty:
             except OSError:
                 pass
             self.fd = None
+        self.pid = None  # reaped; prevents a later kill on a recycled pid
 
     def exit_code(self):
         return self._exit_code
