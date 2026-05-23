@@ -30,10 +30,11 @@ def _leaf_path(path):
 
 
 def _next_available_path(path):
+    stem, ext = os.path.splitext(path)
     index = 1
     candidate = path
     while os.path.exists(candidate):
-        candidate = "{}_{}".format(path, "{:05d}".format(index))
+        candidate = "{}_{:05d}{}".format(stem, index, ext)
         index += 1
     return candidate
 

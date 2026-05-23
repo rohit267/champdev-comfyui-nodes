@@ -266,8 +266,8 @@ def test_save_upload_bytes_does_not_overwrite(tmp_path):
     (tmp_path / "up.bin").write_bytes(b"original")
     res = fm_core.save_upload_bytes(str(tmp_path), "up.bin", b"new")
     assert (tmp_path / "up.bin").read_bytes() == b"original"   # untouched
-    assert os.path.basename(res["path"]) == "up.bin_00001"
-    assert (tmp_path / "up.bin_00001").read_bytes() == b"new"
+    assert os.path.basename(res["path"]) == "up_00001.bin"
+    assert (tmp_path / "up_00001.bin").read_bytes() == b"new"
 
 
 # --- Change 4: _reject_separators also rejects "." and ".." ---
