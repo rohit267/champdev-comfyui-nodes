@@ -152,3 +152,50 @@ def test_make_dir_rejects_existing(tmp_path):
     (tmp_path / "dup").mkdir()
     with pytest.raises(OSError):
         fm_core.make_dir(str(tmp_path), "dup")
+
+
+def test_move_paths_moves_file(tmp_path):
+    src = tmp_path / "f.txt"
+    src.write_text("x")
+    dest = tmp_path / "dest"
+    dest.mkdir()
+
+    results = fm_core.move_paths([str(src)], str(dest))
+
+    assert results[0]["ok"] is True
+    assert (dest / "f.txt").exists()
+    assert not src.exists()
+
+
+def test_move_paths_copies_when_copy_true(tmp_path):
+    src = tmp_path / "f.txt"
+    src.write_text("x")
+    dest = tmp_path / "dest"
+    dest.mkdir()
+
+    results = fm_core.move_paths([str(src)], str(dest), copy=True)
+
+    assert results[0]["ok"] is True
+    assert (dest / "f.txt").exists()
+    assert src.exists()  # original kept
+
+
+def test_move_paths_reports_conflict(tmp_path):
+    src = tmp_path / "f.txt"
+    src.write_text("x")
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    (dest / "f.txt").write_text("existing")
+
+    results = fm_core.move_paths([str(src)], str(dest))
+
+    assert results[0]["ok"] is False
+    assert "error" in results[0]
+    assert src.exists()
+
+
+def test_move_paths_dest_must_be_dir(tmp_path):
+    src = tmp_path / "f.txt"
+    src.write_text("x")
+    with pytest.raises(NotADirectoryError):
+        fm_core.move_paths([str(src)], str(tmp_path / "nope"))

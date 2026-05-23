@@ -120,6 +120,31 @@ def delete_paths(paths):
     return results
 
 
+def move_paths(paths, dest, copy=False):
+    real_dest = safe_realpath(dest)
+    if not os.path.isdir(real_dest):
+        raise NotADirectoryError(real_dest)
+
+    results = []
+    for p in paths:
+        try:
+            real = safe_realpath(p)
+            target = os.path.join(real_dest, os.path.basename(real))
+            if os.path.exists(target):
+                raise FileExistsError(target)
+            if copy:
+                if os.path.isdir(real):
+                    shutil.copytree(real, target)
+                else:
+                    shutil.copy2(real, target)
+            else:
+                shutil.move(real, target)
+            results.append({"path": real, "ok": True, "target": target})
+        except OSError as e:
+            results.append({"path": p, "ok": False, "error": str(e)})
+    return results
+
+
 def get_properties(path):
     real = safe_realpath(path)
     if not os.path.exists(real):
