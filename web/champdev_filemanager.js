@@ -38,7 +38,8 @@ function thumbUrl(path) {
 }
 
 function fmtSize(n) {
-  if (!n) return "—";
+  if (n == null) return "—";
+  if (n === 0) return "0 B";
   const u = ["B", "KB", "MB", "GB", "TB"];
   let i = 0;
   while (n >= 1024 && i < u.length - 1) {
@@ -115,16 +116,16 @@ const ICONS = { folder: "📁", image: "🖼", video: "🎬", audio: "🎵", tex
 
 function openViewer(entry) {
   const overlay = el("div", { class: "champ-fm-overlay" });
-  const close = () => overlay.remove();
+  const onKey = (e) => {
+    if (e.key === "Escape") close();
+  };
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener("keydown", onKey);
+  };
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) close();
   });
-  const onKey = (e) => {
-    if (e.key === "Escape") {
-      close();
-      document.removeEventListener("keydown", onKey);
-    }
-  };
   document.addEventListener("keydown", onKey);
 
   let media;
@@ -236,7 +237,7 @@ function createFileManager(initialPath, showHidden) {
 
     if (entry.kind === "image" && !entry.is_dir) {
       jget("/properties", { path: entry.path }).then((p) => {
-        if (p.width) add("Dimensions", `${p.width} × ${p.height}`);
+        if (p.width && dl.isConnected) add("Dimensions", `${p.width} × ${p.height}`);
       });
     }
   }
@@ -286,7 +287,7 @@ function createFileManager(initialPath, showHidden) {
       if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1;
       let av, bv;
       if (state.sort === "size") { av = a.size; bv = b.size; }
-      else if (state.sort === "modified") { av = a.mtime; bv = b.mtime; }
+      else if (state.sort === "mtime") { av = a.mtime; bv = b.mtime; }
       else if (state.sort === "kind") { av = a.kind; bv = b.kind; }
       else { av = a.name.toLowerCase(); bv = b.name.toLowerCase(); }
       return av < bv ? -dir : av > bv ? dir : 0;
@@ -306,7 +307,7 @@ function createFileManager(initialPath, showHidden) {
       el("table", {},
         el("thead", {}, el("tr", {},
           header("Name", "name"), header("Size", "size"),
-          header("Type", "kind"), header("Modified", "modified"))),
+          header("Type", "kind"), header("Modified", "mtime"))),
         tbody)
     );
     if (!items.length) listWrap.append(el("div", { class: "champ-fm-empty" }, "Empty folder"));
