@@ -2,3 +2,7 @@ __pycache__/
 *.py[cod]
 .DS_Store
 *.zip
+.superpowers/
+docs/
+.venv/
+.pytest_cache/
