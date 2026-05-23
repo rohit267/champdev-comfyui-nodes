@@ -25,8 +25,18 @@ try:
 except ImportError as e:
     _logger.warning("champdev-comfyui-nodes: file manager node failed to load: %s", e)
 
+try:
+    from .terminal import (
+        NODE_CLASS_MAPPINGS as _TERM_CLASSES,
+        NODE_DISPLAY_NAME_MAPPINGS as _TERM_NAMES,
+    )
+    NODE_CLASS_MAPPINGS.update(_TERM_CLASSES)
+    NODE_DISPLAY_NAME_MAPPINGS.update(_TERM_NAMES)
+except ImportError as e:
+    _logger.warning("champdev-comfyui-nodes: terminal node failed to load: %s", e)
+
 WEB_DIRECTORY = "web"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = [
     "NODE_CLASS_MAPPINGS",
     "NODE_DISPLAY_NAME_MAPPINGS",
