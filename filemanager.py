@@ -32,9 +32,14 @@ async def fm_file(request):
             return web.json_response({"error": "not a file"}, status=404)
         headers = {}
         if request.query.get("download") == "1":
-            headers["Content-Disposition"] = (
-                f'attachment; filename="{os.path.basename(real)}"'
+            safe_name = (
+                os.path.basename(real)
+                .replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("\r", "")
+                .replace("\n", "")
             )
+            headers["Content-Disposition"] = f'attachment; filename="{safe_name}"'
         return web.FileResponse(real, headers=headers)
     except Exception as e:
         return web.json_response({"error": str(e)}, status=400)
