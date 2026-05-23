@@ -23,3 +23,54 @@ def classify_kind(name):
     if ext in TEXT_EXTS:
         return "text"
     return "other"
+
+
+def _entry(path):
+    st = os.stat(path)
+    is_dir = os.path.isdir(path)
+    name = os.path.basename(path)
+    return {
+        "name": name,
+        "path": path,
+        "is_dir": is_dir,
+        "size": 0 if is_dir else st.st_size,
+        "mtime": st.st_mtime,
+        "ctime": st.st_ctime,
+        "ext": "" if is_dir else os.path.splitext(name)[1].lower(),
+        "kind": "folder" if is_dir else classify_kind(name),
+    }
+
+
+_SORT_KEYS = {
+    "name": lambda e: e["name"].lower(),
+    "size": lambda e: e["size"],
+    "mtime": lambda e: e["mtime"],
+    "kind": lambda e: e["kind"],
+}
+
+
+def list_dir(path, show_hidden=False, sort="name"):
+    real = safe_realpath(path)
+    if not os.path.exists(real):
+        raise FileNotFoundError(real)
+    if not os.path.isdir(real):
+        raise NotADirectoryError(real)
+
+    entries = []
+    for name in os.listdir(real):
+        if not show_hidden and name.startswith("."):
+            continue
+        try:
+            entries.append(_entry(os.path.join(real, name)))
+        except OSError:
+            continue  # skip unreadable entries
+
+    key = _SORT_KEYS.get(sort, _SORT_KEYS["name"])
+    entries.sort(key=lambda e: (not e["is_dir"], key(e)))
+
+    parent = os.path.dirname(real)
+    return {
+        "cwd": real,
+        "parent": None if parent == real else parent,
+        "entries": entries,
+    }
