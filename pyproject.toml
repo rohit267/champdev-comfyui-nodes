@@ -1,7 +1,7 @@
 [project]
 name = "champdev-comfyui-nodes"
 description = ""
-version = "0.1.1"
+version = "0.2.0"
 license = {file = "LICENSE"} 
 
 [project.urls]
@@ -9,6 +9,9 @@ Repository = "https://github.com/rohit267/champdev-comfyui-nodes"
 #  Used by Comfy Registry https://registry.comfy.org
 Documentation = "https://github.com/rohit267/champdev-comfyui-nodes/wiki"
 "Bug Tracker" = "https://github.com/rohit267/champdev-comfyui-nodes/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.comfy]
 PublisherId = "rohit267"

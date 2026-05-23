@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0
+- Add `ChampdevFM` (Champdev File Manager) node: browse, preview, play, upload,
+  download, rename, move/copy, delete, create folders, and view properties for
+  any path on disk. Vanilla-JS UI; no new dependencies.
+
 ## [Unreleased]
 
 ### Added
