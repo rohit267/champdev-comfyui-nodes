@@ -241,3 +241,60 @@ def test_make_thumbnail_rejects_non_image(tmp_path):
     f.write_text("x")
     with pytest.raises(ValueError):
         fm_core.make_thumbnail(str(f), str(tmp_path / "cache"))
+
+
+# --- Change 1: symlink deletion operates on the link, not its target ---
+
+def test_delete_paths_removes_symlink_not_target(tmp_path):
+    target_dir = tmp_path / "target"
+    target_dir.mkdir()
+    (target_dir / "keep.txt").write_text("important")
+    link = tmp_path / "link"
+    os.symlink(str(target_dir), str(link))
+
+    results = fm_core.delete_paths([str(link)])
+
+    assert results[0]["ok"] is True
+    assert not link.exists()              # link removed
+    assert target_dir.exists()            # target tree preserved
+    assert (target_dir / "keep.txt").read_text() == "important"
+
+
+# --- Change 2: save_upload_bytes does not overwrite existing files ---
+
+def test_save_upload_bytes_does_not_overwrite(tmp_path):
+    (tmp_path / "up.bin").write_bytes(b"original")
+    res = fm_core.save_upload_bytes(str(tmp_path), "up.bin", b"new")
+    assert (tmp_path / "up.bin").read_bytes() == b"original"   # untouched
+    assert os.path.basename(res["path"]) == "up.bin_00001"
+    assert (tmp_path / "up.bin_00001").read_bytes() == b"new"
+
+
+# --- Change 4: _reject_separators also rejects "." and ".." ---
+
+def test_rename_path_rejects_dot_dot(tmp_path):
+    f = tmp_path / "old.txt"
+    f.write_text("x")
+    with pytest.raises(ValueError):
+        fm_core.rename_path(str(f), "..")
+
+    with pytest.raises(ValueError):
+        fm_core.rename_path(str(f), ".")
+
+
+# --- Change 5: list_dir sort by mtime orders file entries by mtime ---
+
+def test_list_dir_sort_by_mtime(tmp_path):
+    f1 = tmp_path / "alpha.txt"
+    f2 = tmp_path / "beta.txt"
+    f1.write_text("a")
+    f2.write_text("b")
+    # set f1 mtime older, f2 mtime newer
+    os.utime(str(f1), (1000000, 1000000))
+    os.utime(str(f2), (2000000, 2000000))
+
+    result = fm_core.list_dir(str(tmp_path), sort="mtime")
+    file_entries = [e for e in result["entries"] if not e["is_dir"]]
+    names = [e["name"] for e in file_entries]
+    # ascending mtime: older first
+    assert names == ["alpha.txt", "beta.txt"]

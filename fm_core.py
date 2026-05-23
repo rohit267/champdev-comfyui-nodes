@@ -19,6 +19,25 @@ def safe_realpath(path):
     return os.path.realpath(os.path.expanduser(path))
 
 
+def _leaf_path(path):
+    """Resolve the parent directory but keep the final component unresolved,
+    so destructive operations act on a symlink itself, not its target."""
+    if not path:
+        raise ValueError("path is required")
+    expanded = os.path.expanduser(path)
+    parent = os.path.dirname(expanded) or "."
+    return os.path.join(os.path.realpath(parent), os.path.basename(expanded))
+
+
+def _next_available_path(path):
+    index = 1
+    candidate = path
+    while os.path.exists(candidate):
+        candidate = "{}_{}".format(path, "{:05d}".format(index))
+        index += 1
+    return candidate
+
+
 def classify_kind(name):
     ext = os.path.splitext(name)[1].lower()
     if ext in IMAGE_EXTS:
@@ -85,11 +104,13 @@ def list_dir(path, show_hidden=False, sort="name"):
 
 def _reject_separators(name, label):
     if not name or os.path.sep in name or (os.path.altsep and os.path.altsep in name):
-        raise ValueError(f"{label} must be a bare name")
+        raise ValueError("{} must be a bare name".format(label))
+    if name in (".", ".."):
+        raise ValueError("{} must not be '.' or '..'".format(label))
 
 
 def rename_path(path, new_name):
-    real = safe_realpath(path)
+    real = _leaf_path(path)
     _reject_separators(new_name, "new_name")
     target = os.path.join(os.path.dirname(real), new_name)
     if os.path.exists(target):
@@ -110,7 +131,7 @@ def delete_paths(paths):
     results = []
     for p in paths:
         try:
-            real = safe_realpath(p)
+            real = _leaf_path(p)
             if os.path.isdir(real) and not os.path.islink(real):
                 shutil.rmtree(real)
             else:
@@ -129,7 +150,7 @@ def move_paths(paths, dest, copy=False):
     results = []
     for p in paths:
         try:
-            real = safe_realpath(p)
+            real = _leaf_path(p)
             target = os.path.join(real_dest, os.path.basename(real))
             if os.path.exists(target):
                 raise FileExistsError(target)
@@ -154,6 +175,7 @@ def save_upload_bytes(dest, filename, data):
     if not safe_name:
         raise ValueError("invalid filename")
     target = os.path.join(real_dest, safe_name)
+    target = _next_available_path(target)
     with open(target, "wb") as f:
         f.write(data)
     return {"ok": True, "path": target}
@@ -162,8 +184,9 @@ def save_upload_bytes(dest, filename, data):
 def make_thumbnail(path, cache_dir, size=256):
     if Image is None:
         raise RuntimeError("PIL not available")
+    cache_dir = os.path.realpath(os.path.expanduser(cache_dir))
     real = safe_realpath(path)
-    if classify_kind(real) != "image":
+    if classify_kind(os.path.basename(real)) != "image":
         raise ValueError("not an image")
     st = os.stat(real)
     key = hashlib.sha1(f"{real}:{st.st_mtime}:{size}".encode()).hexdigest()
