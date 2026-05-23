@@ -28,6 +28,26 @@ Inputs:
 - `fixed_filename_no_increment` (`BOOLEAN`)
 - `auto_delete_after_seconds` (`INT`)
 
+### Champdev File Manager
+A utility node (`ChampdevFM`) that embeds a file manager in its body. Browse any
+folder on the machine running ComfyUI, preview images, play video/audio, and
+manage files.
+
+Widgets:
+- `start_path` (`STRING`): folder the manager opens at (defaults to the output directory).
+- `show_hidden` (`BOOLEAN`): show dotfiles.
+
+Features: editable path bar (Enter to jump anywhere), up/refresh, filter, sortable
+columns, multi-select, full-screen preview for images/video/audio, side properties
+pane, and these operations — upload (button or drag-and-drop), download, rename,
+move, copy, new folder, delete (with confirmation), and properties.
+
+> ⚠️ **Security:** this node can read, rename, move, and **delete files anywhere
+> the ComfyUI server process can access**. It is meant for **local, single-user**
+> use only. Do **not** enable it on a ComfyUI instance exposed to a network
+> (`--listen`, reverse proxy, or shared host): anyone who can reach the UI could
+> delete or exfiltrate arbitrary files. Use at your own risk.
+
 ## Installation
 
 Clone into your ComfyUI custom nodes directory:
