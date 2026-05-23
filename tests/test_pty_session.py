@@ -60,6 +60,7 @@ def test_terminate_stops_session():
     while s.is_alive() and time.time() < deadline:
         time.sleep(0.05)
     assert s.is_alive() is False
+    assert s.exit_code() == -9  # killed by SIGKILL
 
 
 def test_resize_applies_to_pty():
