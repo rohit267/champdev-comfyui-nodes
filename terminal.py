@@ -36,20 +36,33 @@ async def terminal_ws(request):
     loop = asyncio.get_running_loop()
     stop = threading.Event()
 
+    def _drain_future(fut):
+        # Retrieve any exception so a closed-ws send doesn't log
+        # "Future exception was never retrieved".
+        if not fut.cancelled():
+            fut.exception()
+
     def _safe_schedule(coro):
         try:
-            asyncio.run_coroutine_threadsafe(coro, loop)
+            fut = asyncio.run_coroutine_threadsafe(coro, loop)
         except RuntimeError:
-            pass
+            return
+        fut.add_done_callback(_drain_future)
 
     def _reader():
+        shell_exited = False
         while not stop.is_set():
             data = session.read(65536, timeout=0.2)
             if data:
                 _safe_schedule(ws.send_bytes(data))
             elif not session.is_alive():
+                shell_exited = True
                 break
-        _safe_schedule(ws.send_json({"type": "exit", "code": session.exit_code()}))
+        # Only notify/close when the shell ended on its own; on a client
+        # disconnect the socket is already gone.
+        if shell_exited:
+            _safe_schedule(ws.send_json({"type": "exit", "code": session.exit_code()}))
+            _safe_schedule(ws.close())
 
     reader_thread = threading.Thread(target=_reader, daemon=True)
     reader_thread.start()
