@@ -128,7 +128,9 @@ async function setupTerminal(node) {
       status.textContent = "error";
     };
     ws.onclose = () => {
-      if (status.textContent === "connected") status.textContent = "disconnected";
+      if (!["error", "ended"].includes(status.textContent)) {
+        status.textContent = "disconnected";
+      }
     };
   };
 
@@ -182,7 +184,9 @@ app.registerExtension({
     const onCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function () {
       const r = onCreated?.apply(this, arguments);
-      setupTerminal(this);
+      setupTerminal(this).catch((err) =>
+        console.error("[champdev terminal] init failed:", err)
+      );
       return r;
     };
 
