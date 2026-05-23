@@ -102,6 +102,15 @@ class _UnixPty:
                     os.kill(self.pid, signal.SIGKILL)
                 except OSError:
                     pass
+            try:  # reap immediately and capture the exit status
+                wpid, status = os.waitpid(self.pid, 0)
+                if wpid == self.pid:
+                    if os.WIFEXITED(status):
+                        self._exit_code = os.WEXITSTATUS(status)
+                    elif os.WIFSIGNALED(status):
+                        self._exit_code = -os.WTERMSIG(status)
+            except OSError:
+                pass
         if self.fd is not None:
             try:
                 os.close(self.fd)
