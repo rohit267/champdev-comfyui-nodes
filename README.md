@@ -48,6 +48,28 @@ move, copy, new folder, delete (with confirmation), and properties.
 > (`--listen`, reverse proxy, or shared host): anyone who can reach the UI could
 > delete or exfiltrate arbitrary files. Use at your own risk.
 
+### Champdev Terminal
+A utility node (`ChampdevTerminal`) that embeds a full interactive terminal in its
+body, backed by a real pseudo-terminal on the machine running ComfyUI. Supports
+interactive programs (vim, top), ANSI colors, and resizing.
+
+Widgets:
+- `shell` (`STRING`): shell to launch (default empty = auto-detect — `$SHELL` or
+  `/bin/bash`/`/bin/sh` on macOS/Linux, `cmd.exe` on Windows).
+- `start_dir` (`STRING`): working directory the shell starts in (defaults to the
+  output directory).
+
+The shell session is fresh per connection: it starts when the terminal connects
+and is killed when you close/reload (the ⟳ Restart button starts a new shell).
+macOS/Linux use the Python standard library (no extra dependency); Windows
+requires the `pywinpty` package (installed automatically on Windows).
+
+> ⚠️ **Security:** this node opens a **fully interactive shell on the machine
+> running ComfyUI** — arbitrary command execution by design. It is for **local,
+> single-user** use only. Do **not** enable it on a network-exposed ComfyUI
+> (`--listen`, reverse proxy, or shared host): anyone who can reach the UI gets a
+> shell on your machine. Use at your own risk.
+
 ## Installation
 
 Clone into your ComfyUI custom nodes directory:
