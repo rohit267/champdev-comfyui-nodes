@@ -10,6 +10,9 @@ Repository = "https://github.com/rohit267/champdev-comfyui-nodes"
 Documentation = "https://github.com/rohit267/champdev-comfyui-nodes/wiki"
 "Bug Tracker" = "https://github.com/rohit267/champdev-comfyui-nodes/issues"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.comfy]
 PublisherId = "rohit267"
 DisplayName = "champdev-comfyui-nodes"
