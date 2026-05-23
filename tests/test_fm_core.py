@@ -89,3 +89,23 @@ def test_get_properties_includes_image_dimensions(tmp_path):
 def test_get_properties_missing_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         fm_core.get_properties(str(tmp_path / "nope.txt"))
+
+
+def test_delete_paths_removes_files_and_folders(tmp_path):
+    f = tmp_path / "f.txt"
+    f.write_text("x")
+    d = tmp_path / "d"
+    d.mkdir()
+    (d / "inner.txt").write_text("y")
+
+    results = fm_core.delete_paths([str(f), str(d)])
+
+    assert all(r["ok"] for r in results)
+    assert not f.exists()
+    assert not d.exists()
+
+
+def test_delete_paths_reports_errors(tmp_path):
+    results = fm_core.delete_paths([str(tmp_path / "missing")])
+    assert results[0]["ok"] is False
+    assert "error" in results[0]

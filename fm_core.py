@@ -1,4 +1,5 @@
 import os
+import shutil
 
 try:
     from PIL import Image
@@ -79,6 +80,21 @@ def list_dir(path, show_hidden=False, sort="name"):
         "parent": None if parent == real else parent,
         "entries": entries,
     }
+
+
+def delete_paths(paths):
+    results = []
+    for p in paths:
+        try:
+            real = safe_realpath(p)
+            if os.path.isdir(real) and not os.path.islink(real):
+                shutil.rmtree(real)
+            else:
+                os.remove(real)
+            results.append({"path": real, "ok": True})
+        except OSError as e:
+            results.append({"path": p, "ok": False, "error": str(e)})
+    return results
 
 
 def get_properties(path):
