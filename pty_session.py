@@ -114,28 +114,63 @@ class _UnixPty:
 
 
 class _WinPty:
-    """Windows ConPTY implementation (filled in Task 4)."""
+    """Windows ConPTY implementation backed by pywinpty."""
+
+    def __init__(self):
+        self._proc = None
 
     def spawn(self, shell, cwd, env, cols, rows):
-        raise RuntimeError("Windows PTY support not implemented yet")
+        from winpty import PtyProcess  # lazy: only imported on Windows
+
+        spawn_env = env or os.environ.copy()
+        self._proc = PtyProcess.spawn(
+            shell,
+            cwd=cwd or None,
+            env=spawn_env,
+            dimensions=(rows, cols),
+        )
 
     def read(self, max_bytes, timeout):
-        return b""
+        if self._proc is None:
+            return b""
+        try:
+            data = self._proc.read(max_bytes)  # returns str
+        except EOFError:
+            return b""
+        except Exception:
+            return b""
+        if not data:
+            return b""
+        return data.encode("utf-8", "replace")
 
     def write(self, data):
-        pass
+        if self._proc is not None:
+            try:
+                self._proc.write(data.decode("utf-8", "replace"))
+            except Exception:
+                pass
 
     def resize(self, cols, rows):
-        pass
+        if self._proc is not None:
+            try:
+                self._proc.setwinsize(rows, cols)
+            except Exception:
+                pass
 
     def is_alive(self):
-        return False
+        return self._proc is not None and self._proc.isalive()
 
     def terminate(self):
-        pass
+        if self._proc is not None:
+            try:
+                self._proc.terminate(force=True)
+            except Exception:
+                pass
 
     def exit_code(self):
-        return None
+        if self._proc is None:
+            return None
+        return getattr(self._proc, "exitstatus", None)
 
 
 class PtySession:
