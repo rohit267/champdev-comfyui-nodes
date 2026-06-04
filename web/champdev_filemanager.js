@@ -433,13 +433,9 @@ function createFileManager(initialPath, showHidden) {
     if (!items.length) {
       listWrap.append(el("div", { class: "champ-fm-empty" }, "Empty folder"));
     } else if (items.length > windowed.length) {
+      const remaining = items.length - windowed.length;
       listWrap.append(el("div", { class: "champ-fm-more", onclick: loadMore },
-        `${items.length - windowed.length} more — scroll to load`));
-      // if the window doesn't fill the viewport there's no scrollbar to trigger
-      // auto-load, so keep growing until it does (or we run out)
-      requestAnimationFrame(() => {
-        if (listWrap.clientHeight > 0 && listWrap.scrollHeight <= listWrap.clientHeight) loadMore();
-      });
+        `Showing ${windowed.length} of ${items.length} — click or scroll for ${Math.min(PAGE, remaining)} more`));
     }
 
     showProps(state.focused);
@@ -619,8 +615,20 @@ app.registerExtension({
       const startWidget = this.widgets?.find((w) => w.name === "start_path");
       const hiddenWidget = this.widgets?.find((w) => w.name === "show_hidden");
       const fm = createFileManager(startWidget?.value || "", hiddenWidget?.value);
-      this.addDOMWidget("champ_fm", "div", fm.root, { serialize: false, hideOnZoom: false });
+      const fmWidget = this.addDOMWidget("champ_fm", "div", fm.root, { serialize: false, hideOnZoom: false });
       this.size = [640, 520];
+
+      // Without this, ComfyUI sizes the DOM widget (and the node) to its content
+      // — every table row — so the node grows "very long" and the inner list can
+      // never scroll. Derive the widget's height from the NODE's height instead
+      // of its content: the file list becomes a bounded, scrollable box, and the
+      // user resizes it by resizing the node. ~86px is reserved for the title and
+      // the start_path / show_hidden widgets above us.
+      const node = this;
+      fmWidget.computeSize = function (width) {
+        return [width, Math.max(220, (node.size?.[1] || 520) - 86)];
+      };
+
       fm.load(startWidget?.value || "");
       if (startWidget) {
         const cb = startWidget.callback;

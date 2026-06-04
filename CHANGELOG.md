@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.1
+- Fix File Manager lazy loading: the node no longer renders every file on first
+  load. A ComfyUI DOM widget is sized to its content, so the file `<table>` grew
+  the node unbounded (and an over-eager "fill the viewport" loop then loaded all
+  rows). The widget now takes its height from the node size instead of its
+  content, so the list is a bounded scroll box that loads ~20 rows at a time and
+  the node stays a sensible height (resize the node to grow the list).
+
 ## 0.4.0
 - File Manager UX improvements (`ChampdevFM`):
   - Lazy, windowed rendering: only ~20 rows (and thumbnails) load at a time, with
