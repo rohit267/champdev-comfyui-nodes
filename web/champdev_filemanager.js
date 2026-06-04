@@ -618,16 +618,25 @@ app.registerExtension({
       const fmWidget = this.addDOMWidget("champ_fm", "div", fm.root, { serialize: false, hideOnZoom: false });
       this.size = [640, 520];
 
-      // Without this, ComfyUI sizes the DOM widget (and the node) to its content
-      // — every table row — so the node grows "very long" and the inner list can
-      // never scroll. Derive the widget's height from the NODE's height instead
-      // of its content: the file list becomes a bounded, scrollable box, and the
-      // user resizes it by resizing the node. ~86px is reserved for the title and
-      // the start_path / show_hidden widgets above us.
+      // A ComfyUI DOM widget is sized to its content, so the file <table> would
+      // grow the node unbounded and the inner list could never scroll. Pin the
+      // element to an EXPLICIT pixel height derived from the node's height (not
+      // its content) so it clips/scrolls internally and the node stays fixed.
+      // Keep it in sync on resize (drag, and relayout via ResizeObserver). ~86px
+      // is reserved for the node title + start_path / show_hidden widgets above.
       const node = this;
-      fmWidget.computeSize = function (width) {
-        return [width, Math.max(220, (node.size?.[1] || 520) - 86)];
-      };
+      const RESERVED = 86;
+      const fmHeight = () => Math.max(160, Math.round((node.size?.[1] || 520) - RESERVED));
+      const syncHeight = () => { fm.root.style.height = fmHeight() + "px"; };
+      fmWidget.computeSize = function (width) { return [width, fmHeight()]; };
+      const prevResize = this.onResize;
+      this.onResize = function () { prevResize?.apply(this, arguments); syncHeight(); };
+      syncHeight();
+      requestAnimationFrame(() => {
+        syncHeight();
+        const host = fm.root.parentElement;
+        if (host && window.ResizeObserver) new ResizeObserver(syncHeight).observe(host);
+      });
 
       fm.load(startWidget?.value || "");
       if (startWidget) {
