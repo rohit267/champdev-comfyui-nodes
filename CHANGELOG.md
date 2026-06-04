@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.2
+- Fix File Manager scrolling for real: pin the widget element to an explicit
+  pixel height (derived from the node size, synced on resize) instead of relying
+  on `computeSize`, which ComfyUI ignores for element height. The file list is
+  now a bounded, internally-scrolling box, so loading more rows no longer grows
+  the node, and lazy loading (~20 rows at a time) works.
+
 ## 0.4.1
 - Fix File Manager lazy loading: the node no longer renders every file on first
   load. A ComfyUI DOM widget is sized to its content, so the file `<table>` grew
