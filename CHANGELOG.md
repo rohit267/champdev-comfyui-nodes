@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0
+- File Manager UX improvements (`ChampdevFM`):
+  - Lazy, windowed rendering: only ~20 rows (and thumbnails) load at a time, with
+    more loading automatically as you scroll — so large folders no longer try to
+    generate every thumbnail at once.
+  - The file list now scrolls inside the node instead of the node growing very
+    long with many files.
+  - Larger side preview that loads the **original** image (not a thumbnail), with
+    a draggable divider to resize it; click the preview to open fullscreen.
+  - Keyboard navigation: `↑`/`↓` move the selection through the list (updating the
+    preview), `Enter` opens fullscreen.
+  - Fullscreen viewer: `←`/`→` cycle through the previewable media in the current
+    view (wrapping), with a filename/position caption.
+
 ## 0.3.1
 - Fix terminal "unknown terminal type" errors: the PTY now sets `TERM` to match
   the xterm.js frontend instead of inheriting ComfyUI's launch environment. Picks
