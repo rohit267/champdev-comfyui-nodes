@@ -74,3 +74,53 @@ def test_resize_applies_to_pty():
         assert b"40 120" in out
     finally:
         s.terminate()
+
+
+def test_pty_overrides_inherited_term_for_xtermjs(monkeypatch):
+    # The frontend is xterm.js, so the shell must NOT inherit whatever TERM
+    # ComfyUI was launched with (here a bogus value that has no terminfo entry,
+    # which is what triggers "unknown terminal type"). It should instead get a
+    # valid, host-resolved xterm TERM.
+    monkeypatch.setenv("TERM", "totally-bogus-term-xyz")
+    expected = pty_session.resolve_term()
+    needle = ("TERMIS:%s:END" % expected).encode()
+    s = pty_session.PtySession()
+    s.spawn(shell="/bin/sh", cols=80, rows=24)
+    try:
+        s.write(b'printf "TERMIS:%s:END\\n" "$TERM"\n')
+        out = _drain(s, needle)
+        assert needle in out
+        assert b"totally-bogus-term-xyz" not in out
+    finally:
+        s.terminate()
+
+
+def test_resolve_term_prefers_256color(monkeypatch):
+    monkeypatch.setattr(pty_session, "IS_WINDOWS", False)
+    monkeypatch.setattr(pty_session, "_terminfo_has", lambda name: True)
+    assert pty_session.resolve_term() == "xterm-256color"
+
+
+def test_resolve_term_falls_back_when_256color_missing(monkeypatch):
+    # Simulate a slim Linux/container with only the base "xterm" entry.
+    monkeypatch.setattr(pty_session, "IS_WINDOWS", False)
+    monkeypatch.setattr(pty_session, "_terminfo_has", lambda name: name == "xterm")
+    assert pty_session.resolve_term() == "xterm"
+
+
+def test_resolve_term_best_effort_when_db_empty(monkeypatch):
+    monkeypatch.setattr(pty_session, "IS_WINDOWS", False)
+    monkeypatch.setattr(pty_session, "_terminfo_has", lambda name: False)
+    assert pty_session.resolve_term() == "xterm-256color"
+
+
+def test_resolve_term_windows_uses_256color(monkeypatch):
+    monkeypatch.setattr(pty_session, "IS_WINDOWS", True)
+    assert pty_session.resolve_term() == "xterm-256color"
+
+
+def test_terminfo_has_detects_present_and_absent(monkeypatch):
+    # xterm should exist anywhere a usable terminfo DB is installed (the CI/dev
+    # host running this suite). A made-up name must not.
+    assert pty_session._terminfo_has("xterm") is True
+    assert pty_session._terminfo_has("no-such-terminal-xyz") is False
