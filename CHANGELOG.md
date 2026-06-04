@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.1
+- Fix terminal "unknown terminal type" errors: the PTY now sets `TERM` to match
+  the xterm.js frontend instead of inheriting ComfyUI's launch environment. Picks
+  the best terminal type present in the host's terminfo database
+  (`xterm-256color` → `xterm-color` → `xterm`) so slim Linux/containers degrade
+  to fewer colors rather than failing.
+
 ## 0.3.0
 - Add `ChampdevTerminal` (Champdev Terminal) node: a full interactive terminal
   (xterm.js) backed by a real PTY on the server. Cross-platform (stdlib `pty` on
