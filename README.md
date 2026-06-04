@@ -38,9 +38,16 @@ Widgets:
 - `show_hidden` (`BOOLEAN`): show dotfiles.
 
 Features: editable path bar (Enter to jump anywhere), up/refresh, filter, sortable
-columns, multi-select, full-screen preview for images/video/audio, side properties
-pane, and these operations — upload (button or drag-and-drop), download, rename,
-move, copy, new folder, delete (with confirmation), and properties.
+columns, multi-select, a resizable side preview that shows the **original** image
+(click it for full screen), full-screen preview for images/video/audio with
+`←`/`→` to step through them, and these operations — upload (button or
+drag-and-drop), download, rename, move, copy, new folder, delete (with
+confirmation), and properties.
+
+Keyboard: with the list focused, `↑`/`↓` move the selection (the preview updates)
+and `Enter` opens full screen; `Esc` closes it. Large folders load lazily —
+rows and their thumbnails are fetched ~20 at a time as you scroll, and the list
+scrolls inside the node.
 
 > ⚠️ **Security:** this node can read, rename, move, and **delete files anywhere
 > the ComfyUI server process can access**. It is meant for **local, single-user**
