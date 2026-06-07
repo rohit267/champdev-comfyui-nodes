@@ -1,4 +1,29 @@
+import builtins
+
+import pytest
+
 import pty_session
+
+
+def test_winpty_missing_gives_actionable_error(monkeypatch):
+    # On Windows without pywinpty installed, spawning must fail with a clear,
+    # actionable message (telling the user how to install pywinpty), not the
+    # cryptic "No module named 'winpty'" that bubbled straight to the UI.
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "winpty":
+            raise ImportError("No module named 'winpty'")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    impl = pty_session._WinPty()
+    with pytest.raises(RuntimeError) as excinfo:
+        impl.spawn(r"C:\Windows\System32\cmd.exe", None, None, 80, 24)
+    msg = str(excinfo.value)
+    assert "pywinpty" in msg
+    assert "pip install" in msg
 
 
 def test_default_shell_uses_env_shell_on_unix(monkeypatch):

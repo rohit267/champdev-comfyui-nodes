@@ -191,7 +191,16 @@ class _WinPty:
         self._proc = None
 
     def spawn(self, shell, cwd, env, cols, rows):
-        from winpty import PtyProcess  # lazy: only imported on Windows
+        try:
+            from winpty import PtyProcess  # lazy: only imported on Windows
+        except ImportError as e:
+            import sys
+
+            raise RuntimeError(
+                "Windows terminal support needs the 'pywinpty' package, which "
+                "is not installed. Install it into ComfyUI's Python and restart "
+                'ComfyUI:  "%s" -m pip install pywinpty' % sys.executable
+            ) from e
 
         spawn_env = env or os.environ.copy()
         self._proc = PtyProcess.spawn(
