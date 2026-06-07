@@ -69,7 +69,8 @@ Widgets:
 The shell session is fresh per connection: it starts when the terminal connects
 and is killed when you close/reload (the ⟳ Restart button starts a new shell).
 macOS/Linux use the Python standard library (no extra dependency); Windows
-requires the `pywinpty` package (installed automatically on Windows).
+requires the `pywinpty` package (see [Installation](#installation) — installed
+from `requirements.txt`).
 
 > ⚠️ **Security:** this node opens a **fully interactive shell on the machine
 > running ComfyUI** — arbitrary command execution by design. It is for **local,
@@ -79,14 +80,25 @@ requires the `pywinpty` package (installed automatically on Windows).
 
 ## Installation
 
-Clone into your ComfyUI custom nodes directory:
+Easiest: install via **ComfyUI-Manager**, which installs dependencies for you.
+
+To install manually, clone into your ComfyUI custom nodes directory and install
+the dependencies with the **same Python that runs ComfyUI**:
 
 ```bash
 cd /path/to/ComfyUI/custom_nodes
 git clone https://github.com/rohit267/chamdev-comfyui-nodes.git
+cd chamdev-comfyui-nodes
+# ComfyUI portable: use python_embeded\python.exe instead of `python`
+python -m pip install -r requirements.txt
 ```
 
 Restart ComfyUI.
+
+> macOS/Linux have no dependencies (the terminal uses the Python standard
+> library). On Windows the terminal needs `pywinpty`; the command above (and
+> ComfyUI-Manager) installs it. If it's missing, the terminal shows the exact
+> `pip install` command to run.
 
 ## Compatibility
 

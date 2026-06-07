@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.3
+- Fix the Windows terminal failing with `No module named 'winpty'`. The
+  `pywinpty` dependency was declared only in `pyproject.toml`, so the documented
+  git-clone install (and ComfyUI-Manager) never installed it. It's now also in
+  `requirements.txt`, and the install docs include the dependency step. If
+  `pywinpty` is still missing, the terminal now shows an actionable message with
+  the exact `pip install pywinpty` command instead of a cryptic import error.
+
 ## 0.4.2
 - Fix File Manager scrolling for real: pin the widget element to an explicit
   pixel height (derived from the node size, synced on resize) instead of relying

@@ -36,7 +36,7 @@ except ImportError as e:
     _logger.warning("champdev-comfyui-nodes: terminal node failed to load: %s", e)
 
 WEB_DIRECTORY = "web"
-__version__ = "0.3.0"
+__version__ = "0.4.3"
 __all__ = [
     "NODE_CLASS_MAPPINGS",
     "NODE_DISPLAY_NAME_MAPPINGS",
