@@ -62,7 +62,8 @@ interactive programs (vim, top), ANSI colors, and resizing.
 
 Widgets:
 - `shell` (`STRING`): shell to launch (default empty = auto-detect — `$SHELL` or
-  `/bin/bash`/`/bin/sh` on macOS/Linux, `cmd.exe` on Windows).
+  `/bin/bash`/`/bin/sh` on macOS/Linux; on Windows, PowerShell (`pwsh.exe`, then
+  the built-in `powershell.exe`), falling back to `cmd.exe`).
 - `start_dir` (`STRING`): working directory the shell starts in (defaults to the
   output directory).
 

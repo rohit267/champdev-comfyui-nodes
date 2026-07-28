@@ -36,7 +36,14 @@ except ImportError as e:
     _logger.warning("champdev-comfyui-nodes: terminal node failed to load: %s", e)
 
 WEB_DIRECTORY = "web"
-__version__ = "0.4.3"
+__version__ = "0.5.0"
+
+try:
+    from . import telemetry
+    telemetry.maybe_send()
+except Exception as e:  # never let telemetry break node loading
+    _logger.debug("champdev-comfyui-nodes: telemetry skipped: %s", e)
+
 __all__ = [
     "NODE_CLASS_MAPPINGS",
     "NODE_DISPLAY_NAME_MAPPINGS",
