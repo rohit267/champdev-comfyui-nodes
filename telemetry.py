@@ -28,6 +28,11 @@ DEFAULT_TELEMETRY_URL = "https://comfy-nodes-telemetry.champdev.in"
 _TIMEOUT_SECONDS = 3
 _MAX_BODY_BYTES = 16 * 1024
 
+# Identify with a custom User-Agent. The default urllib UA ("Python-urllib/x.y")
+# is blocked by Cloudflare bot protection (403) in front of the telemetry server,
+# so requests must send a non-default UA to get through.
+_USER_AGENT = "champdev-comfyui-telemetry"
+
 # Module-level guard so we only ever send once per process, no matter how many
 # nodes import us.
 _sent = False
@@ -270,10 +275,14 @@ def _post(url, payload):
     body = json.dumps(payload).encode("utf-8")
     if len(body) > _MAX_BODY_BYTES:  # pragma: no cover - payload is tiny
         return
+    version = _pack_version() or "0"
     req = urllib.request.Request(
         url.rstrip("/") + "/ingest",
         data=body,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "{}/{}".format(_USER_AGENT, version),
+        },
         method="POST",
     )
     urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS).close()

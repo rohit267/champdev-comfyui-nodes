@@ -86,6 +86,31 @@ def test_sends_only_once_per_process(monkeypatch):
     assert len(starts) == 1
 
 
+def test_post_sets_non_default_user_agent(monkeypatch):
+    # Cloudflare in front of the server 403s the default "Python-urllib" UA,
+    # so _post must send a custom User-Agent.
+    import urllib.request
+
+    captured = {}
+
+    class _FakeResp:
+        def close(self):
+            pass
+
+    def fake_urlopen(req, timeout=None):
+        captured["req"] = req
+        return _FakeResp()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    telemetry._post("https://example.com", {"install_id": "x"})
+
+    req = captured["req"]
+    ua = req.get_header("User-agent")
+    assert ua and not ua.lower().startswith("python-urllib")
+    assert "champdev" in ua.lower()
+    assert req.full_url.endswith("/ingest")
+
+
 def test_public_ip_returns_none_on_failure(monkeypatch):
     import urllib.request
 
