@@ -13,6 +13,14 @@ if not IS_WINDOWS:
 
 def default_shell():
     if os.name == "nt":
+        # Prefer PowerShell (7's pwsh.exe, then the built-in powershell.exe),
+        # falling back to cmd.exe only if neither is on PATH.
+        import shutil
+
+        for candidate in ("pwsh.exe", "powershell.exe"):
+            found = shutil.which(candidate)
+            if found:
+                return found
         return os.environ.get("COMSPEC") or "cmd.exe"
     shell = os.environ.get("SHELL")
     if shell:
