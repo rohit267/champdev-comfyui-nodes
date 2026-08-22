@@ -36,7 +36,7 @@ except ImportError as e:
     _logger.warning("champdev-comfyui-nodes: terminal node failed to load: %s", e)
 
 WEB_DIRECTORY = "web"
-__version__ = "0.5.1"
+__version__ = "0.5.2"
 
 try:
     from . import telemetry
