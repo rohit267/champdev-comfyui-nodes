@@ -1,5 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
+import { unlockWithDialog } from "./champdev_auth.js";
 
 const VENDOR = new URL("./vendor/", import.meta.url).href;
 
@@ -39,6 +40,16 @@ function widgetValue(node, name) {
   return node.widgets?.find((w) => w.name === name)?.value ?? "";
 }
 
+async function authStatus() {
+  try {
+    const r = await api.fetchApi("/champdev/auth/status");
+    const res = await r.json();
+    return !!res.authed;
+  } catch (e) {
+    return false;
+  }
+}
+
 async function setupTerminal(node) {
   const root = document.createElement("div");
   root.style.cssText =
@@ -58,6 +69,42 @@ async function setupTerminal(node) {
   const host = document.createElement("div");
   host.style.cssText = "flex:1 1 auto;min-height:0;padding:4px";
   root.append(bar, host);
+
+  // Lock overlay: shown until the password unlocks the session. The backend
+  // also refuses to spawn a shell without auth.
+  const lockOverlay = document.createElement("div");
+  lockOverlay.style.cssText =
+    "position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;" +
+    "justify-content:center;background:rgba(30,30,30,.92);z-index:10;border-radius:6px;color:#ddd";
+  const lockMsg = document.createElement("div");
+  lockMsg.textContent = "🔒 Unlock to use terminal";
+  const lockBtn = document.createElement("button");
+  lockBtn.textContent = "Unlock";
+  lockBtn.style.cssText =
+    "background:#3a3a3a;color:#ddd;border:1px solid #555;border-radius:4px;padding:4px 14px;cursor:pointer;font-size:13px";
+  lockOverlay.append(lockMsg, lockBtn);
+  root.style.position = "relative";
+  root.append(lockOverlay);
+
+  async function ensureUnlocked() {
+    if (await authStatus()) return true;
+    status.textContent = "locked";
+    lockOverlay.style.display = "flex";
+    return false;
+  }
+
+  lockBtn.addEventListener("click", async () => {
+    lockBtn.disabled = true;
+    lockBtn.textContent = "…";
+    const ok = await unlockWithDialog("Password (from the telemetry dashboard):");
+    lockBtn.disabled = false;
+    lockBtn.textContent = "Unlock";
+    if (ok) {
+      lockOverlay.style.display = "none";
+      status.textContent = "connecting…";
+      connect();
+    }
+  });
 
   node.addDOMWidget("champ_term", "div", root, { serialize: false, hideOnZoom: false });
   node.size = [620, 400];
@@ -131,6 +178,13 @@ async function setupTerminal(node) {
       if (!["error", "ended"].includes(status.textContent)) {
         status.textContent = "disconnected";
       }
+      // If the session expired mid-use, fall back to the lock overlay.
+      authStatus().then((authed) => {
+        if (!authed) {
+          lockOverlay.style.display = "flex";
+          status.textContent = "locked";
+        }
+      });
     };
   };
 
@@ -150,10 +204,10 @@ async function setupTerminal(node) {
       /* ignore */
     }
     term.reset();
-    connect();
+    ensureUnlocked().then((ok) => ok && connect());
   });
 
-  connect();
+  ensureUnlocked().then((ok) => ok && connect());
 
   node.__champTerm = {
     dispose() {

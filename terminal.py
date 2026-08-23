@@ -10,6 +10,7 @@ import folder_paths
 from aiohttp import web
 from server import PromptServer
 
+from . import password_auth
 from . import pty_session
 
 routes = PromptServer.instance.routes
@@ -88,6 +89,10 @@ except Exception as e:
 
 @routes.get("/champdev/terminal/ws")
 async def terminal_ws(request):
+    # No shell is spawned unless the session is unlocked with the password.
+    if not password_auth.is_authed(request):
+        return web.json_response({"error": "unauthorized"}, status=401)
+
     ws = web.WebSocketResponse(heartbeat=30)
     await ws.prepare(request)
 

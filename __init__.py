@@ -16,6 +16,13 @@ except ImportError as e:
     _logger.warning("champdev-comfyui-nodes: save nodes failed to load: %s", e)
 
 try:
+    from .password_auth import (  # noqa: F401  (registers /champdev/auth/* routes)
+        routes as _AUTH_ROUTES,
+    )
+except ImportError as e:
+    _logger.warning("champdev-comfyui-nodes: auth routes failed to load: %s", e)
+
+try:
     from .filemanager import (
         NODE_CLASS_MAPPINGS as _FM_CLASSES,
         NODE_DISPLAY_NAME_MAPPINGS as _FM_NAMES,
@@ -36,7 +43,7 @@ except ImportError as e:
     _logger.warning("champdev-comfyui-nodes: terminal node failed to load: %s", e)
 
 WEB_DIRECTORY = "web"
-__version__ = "0.5.2"
+__version__ = "0.6.1"
 
 try:
     from . import telemetry

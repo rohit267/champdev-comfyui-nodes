@@ -1,5 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
+import { unlockWithDialog } from "./champdev_auth.js";
 
 const API = "/champdev/fm";
 const STYLE_ID = "champ-fm-style";
@@ -204,6 +205,7 @@ function createFileManager(initialPath, showHidden) {
     filter: "",
     shown: PAGE, // how many of `view` are currently rendered
     sideWidth: 320,
+    unlocked: false, // write actions + browsing above ComfyUI need the password
   };
 
   const root = el("div", { class: "champ-fm" });
@@ -230,6 +232,43 @@ function createFileManager(initialPath, showHidden) {
     actBar.append(b);
   };
   root.append(actBar);
+
+  // --- password unlock ---
+  // Write actions (upload/download/rename/move/copy/folder/delete) are hidden
+  // while locked; the backend also rejects them with 401.
+  const WRITE_ACTIONS = ["upload", "download", "rename", "move", "copy", "mkdir", "del"];
+  const unlockBtn = el("button", { title: "Unlock write actions and browsing outside ComfyUI" }, "🔓 Unlock");
+  const lockBtn = el("button", { title: "Lock (hide write actions)" }, "🔒");
+  lockBtn.style.display = "none";
+  actBar.append(unlockBtn, lockBtn);
+
+  async function refreshAuth() {
+    try {
+      const r = await api.fetchApi("/champdev/auth/status");
+      const res = await r.json();
+      state.unlocked = !!res.authed;
+    } catch (e) {
+      state.unlocked = false;
+    }
+    updateActionState();
+  }
+
+  async function unlock() {
+    const ok = await unlockWithDialog("Password (from the telemetry dashboard):");
+    if (!ok) return;
+    state.unlocked = true;
+    toast("success", "Unlocked", "Write actions enabled");
+    updateActionState();
+    load(); // re-browse in case we were clamped above the ComfyUI root
+  }
+
+  function lock() {
+    state.unlocked = false;
+    updateActionState();
+  }
+
+  unlockBtn.addEventListener("click", unlock);
+  lockBtn.addEventListener("click", lock);
 
   // --- body: list + resizable divider + side pane ---
   const listWrap = el("div", { class: "champ-fm-list" });
@@ -266,7 +305,11 @@ function createFileManager(initialPath, showHidden) {
     const target = path != null ? path : state.cwd;
     const res = await jget("/list", { path: target, show_hidden: state.showHidden, sort: state.sort });
     if (res.error) {
-      toast("error", "Cannot open folder", res.error);
+      if (res.error === "unlock to browse outside ComfyUI") {
+        toast("warn", "Locked", "Unlock to browse outside ComfyUI");
+      } else {
+        toast("error", "Cannot open folder", res.error);
+      }
       return;
     }
     state.cwd = res.cwd;
@@ -277,6 +320,12 @@ function createFileManager(initialPath, showHidden) {
     state.shown = PAGE;
     listWrap.scrollTop = 0;
     render();
+    // While locked, the server pins us inside the ComfyUI root — surface that.
+    if (res.clamped && !state.unlocked) {
+      side.replaceChildren();
+      side.append(el("div", { style: { color: "#e8c15a", fontSize: "12px", lineHeight: 1.5 } },
+        "🔒 Locked to the ComfyUI folder. Unlock to browse above it."));
+    }
   }
 
   function loadMore() {
@@ -301,6 +350,12 @@ function createFileManager(initialPath, showHidden) {
     actions.copy.disabled = !any;
     actions.del.disabled = !any;
     actions.props.disabled = !one;
+    // Hide write actions until unlocked; the backend enforces this too.
+    for (const k of WRITE_ACTIONS) actions[k].style.display = state.unlocked ? "" : "none";
+    unlockBtn.style.display = state.unlocked ? "none" : "";
+    lockBtn.style.display = state.unlocked ? "" : "none";
+    // read-only actions stay visible while locked
+    actions.preview.style.display = actions.props.style.display = "";
   }
 
   function showProps(entry) {
@@ -477,6 +532,10 @@ function createFileManager(initialPath, showHidden) {
   // ---- uploads ----
   async function uploadFiles(fileList) {
     if (!fileList || !fileList.length) return;
+    if (!state.unlocked) {
+      toast("warn", "Locked", "Unlock to upload files");
+      return;
+    }
     const fd = new FormData();
     fd.append("dest", state.cwd); // dest MUST be first (multipart is read in order)
     for (const f of fileList) fd.append("files", f, f.name);
@@ -601,7 +660,7 @@ function createFileManager(initialPath, showHidden) {
     if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files);
   });
 
-  return { root, load };
+  return { root, load, refreshAuth };
 }
 
 app.registerExtension({
@@ -639,6 +698,7 @@ app.registerExtension({
       });
 
       fm.load(startWidget?.value || "");
+      fm.refreshAuth();
       if (startWidget) {
         const cb = startWidget.callback;
         startWidget.callback = function () {

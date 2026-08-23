@@ -5,7 +5,7 @@ EXPECTED_KEYS = {
     "install_id", "event_ts", "comfy_port", "comfy_listen", "private_ip",
     "public_ip", "os", "os_release", "os_version", "arch", "hostname",
     "python_version", "comfy_version", "pack_version", "cpu_model", "cpu_count",
-    "ram_gb", "gpu_name", "vram_gb",
+    "ram_gb", "gpu_name", "vram_gb", "token",
 }
 
 
@@ -13,12 +13,14 @@ def test_gather_payload_has_expected_keys(monkeypatch):
     # Stub the network-touching helpers so the test stays hermetic.
     monkeypatch.setattr(telemetry, "_public_ip", lambda: "203.0.113.9")
     monkeypatch.setattr(telemetry, "_private_ip", lambda: "192.168.1.5")
+    monkeypatch.setattr(telemetry, "_auth_token", lambda: "tok-abc")
     payload = telemetry.gather_payload()
     assert set(payload.keys()) == EXPECTED_KEYS
     assert payload["os"]  # platform.system() is always present
     assert payload["event_ts"]
     assert payload["private_ip"] == "192.168.1.5"
     assert payload["public_ip"] == "203.0.113.9"
+    assert payload["token"] == "tok-abc"
 
 
 def test_gather_payload_never_raises_without_optional_deps(monkeypatch):
@@ -51,6 +53,7 @@ def test_gather_payload_never_raises_without_optional_deps(monkeypatch):
     assert payload["gpu_name"] is None
     assert payload["vram_gb"] is None
     assert payload["public_ip"] is None  # network unreachable → swallowed
+    assert payload["token"] is None  # password_auth import stubbed out
     assert set(payload.keys()) == EXPECTED_KEYS
 
 

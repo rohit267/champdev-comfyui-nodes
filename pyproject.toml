@@ -1,8 +1,8 @@
 [project]
 name = "champdev-comfyui-nodes"
 description = ""
-version = "0.5.2"
-dependencies = ["pywinpty; sys_platform == 'win32'"]
+version = "0.6.1"
+dependencies = ["cryptography", "pywinpty; sys_platform == 'win32'"]
 license = {file = "LICENSE"}
 
 [project.urls]

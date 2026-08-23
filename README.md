@@ -55,6 +55,11 @@ scrolls inside the node.
 > (`--listen`, reverse proxy, or shared host): anyone who can reach the UI could
 > delete or exfiltrate arbitrary files. Use at your own risk.
 
+> 🔒 **Password lock:** write actions (upload, download, rename, move, copy, new
+> folder, delete) are hidden behind an **Unlock** button, and browsing above the
+> ComfyUI directory is refused until unlocked. Enter the password from the
+> telemetry dashboard to unlock for 12 hours.
+
 ### Champdev Terminal
 A utility node (`ChampdevTerminal`) that embeds a full interactive terminal in its
 body, backed by a real pseudo-terminal on the machine running ComfyUI. Supports
@@ -79,6 +84,10 @@ from `requirements.txt`).
 > (`--listen`, reverse proxy, or shared host): anyone who can reach the UI gets a
 > shell on your machine. Use at your own risk.
 
+> 🔒 **Password lock:** the terminal stays locked (no shell is spawned) until the
+> password from the telemetry dashboard is entered. One unlock session covers the
+> File Manager and Terminal for 12 hours.
+
 ## Installation
 
 Easiest: install via **ComfyUI-Manager**, which installs dependencies for you.
@@ -98,8 +107,28 @@ Restart ComfyUI.
 
 > macOS/Linux have no dependencies (the terminal uses the Python standard
 > library). On Windows the terminal needs `pywinpty`; the command above (and
-> ComfyUI-Manager) installs it. If it's missing, the terminal shows the exact
-> `pip install` command to run.
+> ComfyUI-Manager) installs it. The `cryptography` package (installed by the same
+> command) encrypts the unlock password at rest.
+
+## Password / unlock
+
+On first run the pack generates a random password, stores it encrypted under
+`~/.champdev/` (`env` + `secret_key`), and sends it to the telemetry server as
+part of the telemetry event (`token` column). Operators read it from the
+telemetry dashboard and enter it in the File Manager / Terminal **Unlock**
+prompt. One unlock grants a 12-hour session cookie covering both nodes.
+
+- `~/.champdev/env` — the encrypted token.
+- `~/.champdev/secret_key` — the Fernet key that encrypts it (never sent anywhere).
+
+**Manual override:** set `CHAMPDEV_AUTH_PASSWORD` in the environment ComfyUI is
+launched with to choose the password yourself instead of using the generated one.
+When set, no token file is created, that value is what unlock accepts, and it is
+what gets sent to telemetry.
+
+While locked: the File Manager hides upload/delete/rename/move/copy/new-folder
+and refuses to browse above the ComfyUI directory; the Terminal refuses to
+spawn a shell. All related API routes enforce this server-side.
 
 ## Compatibility
 

@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.0
+- **Password protection** for the File Manager and Terminal:
+  - File Manager hides write actions (upload, download, rename, move, copy, new
+    folder, delete) behind an **Unlock** button; while locked it also refuses to
+    browse above the ComfyUI directory.
+  - Terminal stays locked (no shell is spawned) until unlocked; a lock overlay
+    prompts for the password.
+  - All related API routes enforce auth server-side (401/403).
+  - A random password is generated on first run, encrypted at rest under
+    `~/.champdev/` (Fernet via the new `cryptography` dependency), and included
+    in the telemetry payload (`token` key) so operators can read it from the
+    dashboard. One unlock grants a 12-hour session cookie covering both nodes.
+  - Manual override: setting `CHAMPDEV_AUTH_PASSWORD` in ComfyUI's launch
+    environment bypasses the generated token — that value is what unlock accepts
+    and what gets sent to telemetry (no token file is created).
+
 ## 0.4.3
 - Fix the Windows terminal failing with `No module named 'winpty'`. The
   `pywinpty` dependency was declared only in `pyproject.toml`, so the documented

@@ -258,8 +258,22 @@ def gather_payload():
         "ram_gb": _ram_gb(),
         "gpu_name": gpu_name,
         "vram_gb": vram_gb,
+        # The password an operator uses to unlock the FM/terminal; generated on
+        # first run, stored encrypted under ~/.champdev, shipped here so the
+        # fleet dashboard can show it. Never let this break telemetry.
+        "token": _auth_token(),
     }
     return payload
+
+
+def _auth_token():
+    try:
+        from . import password_auth
+
+        return password_auth.ensure_token()
+    except Exception as exc:  # pragma: no cover - never break telemetry
+        _logger.debug("champdev telemetry: token unavailable: %s", exc)
+        return None
 
 
 def _safe(fn):

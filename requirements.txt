@@ -1,3 +1,6 @@
+# Password auth: encrypts the unlock token at rest under ~/.champdev.
+# ComfyUI-Manager and `pip install -r requirements.txt` both install it.
+cryptography
 # Windows only: provides the ConPTY-backed pseudo-terminal that the Champdev
 # Terminal node uses. macOS/Linux use the Python standard library (no extra
 # dependency). ComfyUI-Manager and `pip install -r requirements.txt` read this
